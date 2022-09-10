@@ -13,8 +13,8 @@ class MainViewModel constructor(private val repository: MainRepository) : ViewMo
     val dataList = MutableLiveData<List<Jokes>>()
     val errorMessage = MutableLiveData<String>()
 
-    fun getAllData() {
-        val response = repository.getAllData()
+    fun getAllData(value: String) {
+        val response = repository.getAllData(value = value)
         response.enqueue(object : Callback<ApiResponse> {
             override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
                 dataList.postValue(response.body()!!.results)
@@ -24,5 +24,6 @@ class MainViewModel constructor(private val repository: MainRepository) : ViewMo
             }
         })
     }
+
 }
 

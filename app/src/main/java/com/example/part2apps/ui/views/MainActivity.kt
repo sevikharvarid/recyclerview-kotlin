@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         binding.rvListData.adapter = adapter
         viewModel =
-            ViewModelProvider(this, MainViewModelFactory(MainRepository(retrofitService, "")))
+            ViewModelProvider(this, MainViewModelFactory(MainRepository(retrofitService)))
                 .get(MainViewModel::class.java)
         viewModel.dataList.observe(this, Observer {
             Log.d(TAG, "onCreate: $it")
@@ -44,21 +44,10 @@ class MainActivity : AppCompatActivity() {
         viewModel.errorMessage.observe(this, Observer {
             Log.d(TAG, "onError: $it")
         })
-        viewModel.getAllData()
-        btnSearch.setOnClickListener {
+
+        binding.btnSearch.setOnClickListener {
             Toast.makeText(this,searchData.query,Toast.LENGTH_SHORT).show()
-            binding.rvListData.adapter = adapter
-            viewModel =
-                ViewModelProvider(this, MainViewModelFactory(MainRepository(retrofitService, searchData.query.toString())))
-                    .get(MainViewModel::class.java)
-            viewModel.dataList.observe(this, Observer {
-                Log.d(TAG, "onCreate: $it")
-                adapter.setDataList(it)
-            })
-            viewModel.errorMessage.observe(this, Observer {
-                Log.d(TAG, "onError: $it")
-            })
-            viewModel.getAllData()
+            viewModel.getAllData(value = searchData.query.toString())
         }
     }
 }
