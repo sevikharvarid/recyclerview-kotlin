@@ -27,6 +27,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         recyclerLayourManager = LinearLayoutManager(this,LinearLayoutManager.VERTICAL,false)
+        recyclerAdapter = RecycleAdapter(mutableListOf())
         rv_list_data.layoutManager = recyclerLayourManager
         rv_list_data.adapter = recyclerAdapter
         rv_list_data.setHasFixedSize(true)
@@ -41,7 +42,7 @@ class MainActivity : AppCompatActivity() {
         val apiService = ApiService.getInstance().create(ApiInterface::class.java)
         apiService.getAllData(query = "test").enqueue(object : Callback<ApiResponse>{
             override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
-                return onDataFetched(response.body()!!.result)
+                return onDataFetched(response.body()!!.results)
             }
 
             override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
