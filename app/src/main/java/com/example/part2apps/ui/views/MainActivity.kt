@@ -2,65 +2,64 @@ package com.example.part2apps.ui.views
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.core.content.ContentProviderCompat.requireContext
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
+import android.util.Log
+import android.widget.Toast
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProviders
 import com.example.part2apps.R
-import com.example.part2apps.data.model.Jokes
 import com.example.part2apps.data.remote.api.ApiInterface
-import com.example.part2apps.data.remote.response.ApiResponse
-import com.example.part2apps.data.remote.service.ApiService
+import com.example.part2apps.data.repository.MainRepository
+import com.example.part2apps.databinding.ActivityMainBinding
 import com.example.part2apps.ui.adapter.RecycleAdapter
+import com.example.part2apps.utils.MainViewModelFactory
+import com.example.part2apps.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.activity_main.*
-import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class MainActivity : AppCompatActivity() {
 
-    private var searchValue = ""
-    private lateinit var recyclerAdapter: RecycleAdapter
-    private lateinit var recyclerLayourManager: LinearLayoutManager
-    private lateinit var recyclerList: List<Jokes>
+    private val TAG = "MainActivity"
+    private lateinit var binding: ActivityMainBinding
+    lateinit var viewModel: MainViewModel
+    private val retrofitService = ApiInterface.getInstance()
+    val adapter = RecycleAdapter()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        recyclerLayourManager = LinearLayoutManager(this,LinearLayoutManager.VERTICAL,false)
-        recyclerAdapter = RecycleAdapter(mutableListOf())
-        rv_list_data.layoutManager = recyclerLayourManager
-        rv_list_data.adapter = recyclerAdapter
-        rv_list_data.setHasFixedSize(true)
-
-        getListData { jokes: List<Jokes> ->
-            rv_list_data.adapter = RecycleAdapter(jokes as MutableList<Jokes>)
-        }
-
-    }
-
-    private fun getListData(callback: (List<Jokes>) -> Unit) {
-        val apiService = ApiService.getInstance().create(ApiInterface::class.java)
-        apiService.getAllData(query = "test").enqueue(object : Callback<ApiResponse>{
-            override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
-                return onDataFetched(response.body()!!.results)
-            }
-
-            override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
-            }
-
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        binding.rvListData.adapter = adapter
+        viewModel =
+            ViewModelProvider(this, MainViewModelFactory(MainRepository(retrofitService, "")))
+                .get(MainViewModel::class.java)
+        viewModel.dataList.observe(this, Observer {
+            Log.d(TAG, "onCreate: $it")
+            adapter.setDataList(it)
         })
-//        apiService.getMovieList(page = popularMoviesPage).enqueue(object : Callback<ApiResponse> {
-//            override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
-//                return onPopularMoviesFetched(response.body()!!.movies)
-//            }
-//
-//            override fun onFailure(call: Call<ApiResponse>, t: Throwable) {}
-//        })
+        viewModel.errorMessage.observe(this, Observer {
+            Log.d(TAG, "onError: $it")
+        })
+        viewModel.getAllData()
+        btnSearch.setOnClickListener {
+            Toast.makeText(this,searchData.query,Toast.LENGTH_SHORT).show()
+            binding.rvListData.adapter = adapter
+            viewModel =
+                ViewModelProvider(this, MainViewModelFactory(MainRepository(retrofitService, searchData.query.toString())))
+                    .get(MainViewModel::class.java)
+            viewModel.dataList.observe(this, Observer {
+                Log.d(TAG, "onCreate: $it")
+                adapter.setDataList(it)
+            })
+            viewModel.errorMessage.observe(this, Observer {
+                Log.d(TAG, "onError: $it")
+            })
+            viewModel.getAllData()
+        }
     }
-    private fun onDataFetched(list: List<Jokes>) {
-        recyclerAdapter.appendData(list)
-        recyclerList = list
-        recyclerAdapter.notifyDataSetChanged()
-    }
-
 }
+
